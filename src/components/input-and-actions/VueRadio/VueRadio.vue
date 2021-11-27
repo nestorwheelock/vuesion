@@ -1,15 +1,9 @@
 <template>
-  <ValidationProvider
-    ref="validator"
+  <div
     :class="[$style.radio, disabled && $style.disabled]"
-    :aria-label="label"
-    :vid="id"
-    :name="name"
-    :rules="validation"
-    tag="div"
     :tabindex="disabled ? null : 0"
-    @click.native.stop.prevent="onClick"
-    @keypress.space.native.stop.prevent="onClick"
+    @click.stop.prevent="onClick"
+    @keypress.space.stop.prevent="onClick"
   >
     <div :class="$style.wrapper">
       <input
@@ -33,17 +27,20 @@
     <vue-text v-if="description" :class="$style.description" as="div">
       {{ description }}
     </vue-text>
-  </ValidationProvider>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
-import { ValidationProvider } from 'vee-validate';
+import { computed, defineComponent, inject } from '@vue/composition-api';
 import VueText from '@/components/typography/VueText/VueText.vue';
+import {
+  registerFieldValidation,
+  registerFieldValidationDefault,
+} from '@/components/forms/VueForm/register-field-validation';
 
 export default defineComponent({
   name: 'VueRadio',
-  components: { VueText, ValidationProvider },
+  components: { VueText },
   inheritAttrs: false,
   model: {
     event: 'click',
@@ -59,6 +56,17 @@ export default defineComponent({
     value: { type: String, default: null },
   },
   setup(props, { emit }) {
+    const registerValidation = inject(registerFieldValidation, registerFieldValidationDefault);
+    const fieldValidation = registerValidation(
+      props.id,
+      computed(() => props.value),
+      {
+        ...props.validation,
+        required: props.required,
+      },
+      true,
+    );
+
     const onClick = (e: Event) => {
       e.preventDefault();
 
@@ -69,6 +77,7 @@ export default defineComponent({
 
     return {
       onClick,
+      fieldValidation,
     };
   },
 });

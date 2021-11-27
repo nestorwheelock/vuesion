@@ -138,10 +138,7 @@
                     <vue-column :width="['content', 'content', '50%']">
                       <vue-stack space="16">
                         <vue-text look="h4">Form validation.</vue-text>
-                        <vue-text look="description">
-                          This example shows how to validate forms with the vee-validate library and the Vuesion
-                          components.
-                        </vue-text>
+                        <vue-text look="description"> This example shows how to validate forms with vuesion. </vue-text>
                         <nuxt-link to="/example/form"> Go to Form example <vue-icon-arrow-right /> </nuxt-link>
                       </vue-stack>
                     </vue-column>

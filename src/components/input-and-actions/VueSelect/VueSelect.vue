@@ -1,101 +1,95 @@
 <template>
-  <ValidationProvider
-    v-slot="{ errors, validate }"
-    ref="validator"
-    :vid="id"
-    :name="name"
-    :rules="validation"
-    tag="div"
+  <div
+    ref="selectRef"
+    :class="[$style.vueSelect, disabled && $style.disabled, fieldValidation.valid === false && $style.error]"
+    @keydown="onKeyDown"
   >
-    <div
-      ref="selectRef"
-      :class="[$style.vueSelect, disabled && $style.disabled, errors.length > 0 && $style.error]"
-      @keydown="onKeyDown"
+    <vue-text
+      :for="id"
+      look="label"
+      :color="fieldValidation.valid === false ? 'danger' : 'text-medium'"
+      :class="[$style.label, hideLabel && 'sr-only']"
+      as="label"
     >
-      <vue-text
-        :for="id"
-        look="label"
-        :color="errors.length > 0 ? 'danger' : 'text-medium'"
-        :class="[$style.label, hideLabel && 'sr-only']"
-        as="label"
+      {{ label }}
+      <sup v-if="required">*</sup>
+    </vue-text>
+
+    <div :class="$style.selectWrapper">
+      <select
+        :id="id"
+        :data-testid="'native-' + id"
+        :name="name"
+        :value="inputValue"
+        :title="label"
+        :required="required"
+        :disabled="disabled"
+        :class="[$style.nativeSelect, placeholder && !inputValue && $style.hasPlaceholder, $style[size]]"
+        v-bind="$attrs"
+        v-on="{
+          ...$listeners,
+          input: onInput,
+        }"
       >
-        {{ label }}
-        <sup v-if="required">*</sup>
-      </vue-text>
-
-      <div :class="$style.selectWrapper">
-        <select
-          :id="id"
-          :data-testid="'native-' + id"
-          :name="name"
-          :value="inputValue"
-          :title="label"
-          :required="required"
-          :disabled="disabled"
-          :class="[$style.nativeSelect, placeholder && !inputValue && $style.hasPlaceholder, $style[size]]"
-          v-bind="$attrs"
-          v-on="{
-            ...$listeners,
-            input: onInput,
-          }"
+        <option v-if="placeholder && !inputValue" value="" disabled selected>{{ placeholder }}</option>
+        <option
+          v-for="(option, idx) in options"
+          :key="idx"
+          :value="option.value"
+          :selected="inputValue === option.value"
         >
-          <option v-if="placeholder && !inputValue" value="" disabled selected>{{ placeholder }}</option>
-          <option
-            v-for="(option, idx) in options"
-            :key="idx"
-            :value="option.value"
-            :selected="inputValue === option.value"
-          >
-            {{ option.label }}
-          </option>
-        </select>
+          {{ option.label }}
+        </option>
+      </select>
 
-        <div
-          :data-testid="'custom-' + id"
-          :aria-expanded="show.toString()"
-          :class="[$style.customSelect, placeholder && !inputValue && $style.hasPlaceholder, $style[size]]"
-          :tabindex="disabled ? -1 : 0"
-          role="listbox"
-          @click.stop.prevent="toggleMenu"
-          @blur="validate"
-        >
-          {{ inputValueOption ? inputValueOption.label : placeholder }}
-        </div>
-
-        <div :class="$style.icon" :data-testid="'toggle-' + id" @click.stop.prevent="toggleMenu">
-          <vue-icon-chevron-down />
-        </div>
+      <div
+        :id="'custom-' + id"
+        :data-testid="'custom-' + id"
+        :aria-expanded="show.toString()"
+        :class="[$style.customSelect, placeholder && !inputValue && $style.hasPlaceholder, $style[size]]"
+        :tabindex="disabled ? -1 : 0"
+        role="listbox"
+        @click.stop.prevent="toggleMenu"
+      >
+        {{ inputValueOption ? inputValueOption.label : placeholder }}
       </div>
 
-      <vue-collapse :show="show" :duration="duration">
-        <vue-menu
-          :items="options"
-          :class="[$style.menu, hideLabel && $style.hideLabel, $style[alignMenu], $style[alignYMenu], $style[size]]"
-          @click="onItemClick"
-        />
-      </vue-collapse>
-
-      <vue-text
-        :color="errors.length > 0 ? 'danger' : 'text-medium'"
-        :class="[$style.description, hideDescription && 'sr-only']"
-      >
-        {{ errors.length > 0 ? errorMessage : description }}
-      </vue-text>
+      <div :class="$style.icon" :data-testid="'toggle-' + id" @click.stop.prevent="toggleMenu">
+        <vue-icon-chevron-down />
+      </div>
     </div>
-  </ValidationProvider>
+
+    <vue-collapse :show="show" :duration="duration">
+      <vue-menu
+        :items="options"
+        :class="[$style.menu, hideLabel && $style.hideLabel, $style[alignMenu], $style[alignYMenu], $style[size]]"
+        @click="onItemClick"
+      />
+    </vue-collapse>
+
+    <vue-text
+      :color="fieldValidation.valid === false ? 'danger' : 'text-medium'"
+      :class="[$style.description, hideDescription && 'sr-only']"
+    >
+      {{ fieldValidation.valid === false ? errorMessage : description }}
+    </vue-text>
+  </div>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, nextTick } from '@vue/composition-api';
-import { ValidationProvider } from 'vee-validate';
+import { computed, defineComponent, ref, nextTick, inject } from '@vue/composition-api';
 import { IItem } from '@/interfaces/IItem';
+import { getDomRef } from '@/composables/get-dom-ref';
+import { useOutsideClick } from '@/composables/use-outside-click';
+import { horizontalAlignmentValidator, shirtSizeValidator } from '@/components/prop-validators';
+import {
+  registerFieldValidation,
+  registerFieldValidationDefault,
+} from '@/components/forms/VueForm/register-field-validation';
 import VueText from '@/components/typography/VueText/VueText.vue';
 import VueCollapse from '@/components/behavior/VueCollapse/VueCollapse.vue';
 import VueMenu from '@/components/data-display/VueMenu/VueMenu.vue';
-import { useOutsideClick } from '@/composables/use-outside-click';
-import { getDomRef } from '@/composables/get-dom-ref';
 import VueIconChevronDown from '@/components/icons/VueIconChevronDown.vue';
-import { horizontalAlignmentValidator, shirtSizeValidator } from '@/components/prop-validators';
 
 export default defineComponent({
   name: 'VueSelect',
@@ -104,7 +98,6 @@ export default defineComponent({
     VueMenu,
     VueCollapse,
     VueText,
-    ValidationProvider,
   },
   inheritAttrs: false,
   props: {
@@ -127,6 +120,16 @@ export default defineComponent({
     size: { type: String, validator: shirtSizeValidator, default: 'md' },
   },
   setup(props, { emit }) {
+    const registerValidation = inject(registerFieldValidation, registerFieldValidationDefault);
+    const fieldValidation = registerValidation(
+      props.id,
+      computed(() => props.value),
+      {
+        ...props.validation,
+        required: props.required,
+      },
+      true,
+    );
     const selectRef = getDomRef(null);
     const show = ref(false);
     const options = computed<Array<IItem>>(() =>
@@ -215,6 +218,7 @@ export default defineComponent({
     useOutsideClick(selectRef, () => close());
 
     return {
+      fieldValidation,
       selectRef,
       show,
       options,
@@ -331,8 +335,8 @@ export default defineComponent({
   }
 
   .description {
-    display: flex;
-    height: $select-description-height;
+    display: block;
+    min-height: $select-description-height;
     margin-top: $select-description-gap;
   }
 

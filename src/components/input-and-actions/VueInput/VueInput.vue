@@ -1,87 +1,89 @@
 <template>
-  <ValidationProvider v-slot="{ errors }" ref="validator" :vid="id" :name="name" :rules="validation" tag="div">
-    <div :class="[$style.vueInput, disabled && $style.disabled, errors.length > 0 && $style.error]">
-      <vue-text
-        :for="id"
-        look="label"
-        :color="errors.length > 0 ? 'danger' : 'text-medium'"
-        :class="[$style.label, hideLabel && 'sr-only']"
-        as="label"
-      >
-        {{ label }}
-        <sup v-if="required">*</sup>
-      </vue-text>
+  <div :class="[$style.vueInput, disabled && $style.disabled, fieldValidation.valid === false && $style.error]">
+    <vue-text
+      :for="id"
+      look="label"
+      :color="fieldValidation.valid === false ? 'danger' : 'text-medium'"
+      :class="[$style.label, hideLabel && 'sr-only']"
+      as="label"
+    >
+      {{ label }}
+      <sup v-if="required">*</sup>
+    </vue-text>
 
+    <div
+      :class="[
+        $style.inputWrapper,
+        leadingIcon && $style.hasLeadingContent,
+        trailingIcon && $style.hasTrailingContent,
+        $style[size],
+      ]"
+    >
       <div
-        :class="[
-          $style.inputWrapper,
-          leadingIcon && $style.hasLeadingContent,
-          trailingIcon && $style.hasTrailingContent,
-          $style[size],
-        ]"
+        v-if="leadingIcon"
+        :data-testid="`${id}-leading-icon`"
+        :class="$style.leading"
+        @click="$emit('leading-icon-click')"
       >
-        <div
-          v-if="leadingIcon"
-          :data-testid="`${id}-leading-icon`"
-          :class="$style.leading"
-          @click="$emit('leading-icon-click')"
-        >
-          <component :is="`vue-icon-${leadingIcon}`" />
-        </div>
-
-        <input
-          :id="id"
-          ref="input"
-          :name="name"
-          :placeholder="placeholder"
-          :required="required"
-          :value="value"
-          :type="type"
-          :autocomplete="autocomplete"
-          :disabled="disabled"
-          :readonly="readonly"
-          :autofocus="autofocus"
-          :size="sizeAttribute"
-          v-bind="$attrs"
-          v-on="{
-            ...$listeners,
-            input: (e) => {
-              $emit('input', e.target.value);
-            },
-          }"
-        />
-
-        <div
-          v-if="trailingIcon"
-          :data-testid="`${id}-trailing-icon`"
-          :class="$style.trailing"
-          @click="$emit('trailing-icon-click')"
-        >
-          <component :is="`vue-icon-${trailingIcon}`" />
-        </div>
+        <component :is="`vue-icon-${leadingIcon}`" />
       </div>
 
-      <vue-text
-        :color="errors.length > 0 ? 'danger' : 'text-medium'"
-        :class="[$style.description, hideDescription && 'sr-only']"
+      <input
+        :id="id"
+        ref="input"
+        :name="name"
+        :placeholder="placeholder"
+        :required="required"
+        :value="value"
+        :type="type"
+        :autocomplete="autocomplete"
+        :disabled="disabled"
+        :readonly="readonly"
+        :autofocus="autofocus"
+        :size="sizeAttribute"
+        v-bind="$attrs"
+        v-on="{
+          ...$listeners,
+          input: (e) => {
+            $emit('input', e.target.value);
+          },
+        }"
+      />
+
+      <div
+        v-if="trailingIcon"
+        :data-testid="`${id}-trailing-icon`"
+        :class="$style.trailing"
+        @click="$emit('trailing-icon-click')"
       >
-        {{ errors.length > 0 ? errorMessage : description }}
-      </vue-text>
+        <component :is="`vue-icon-${trailingIcon}`" />
+      </div>
     </div>
-  </ValidationProvider>
+
+    <vue-text
+      :color="fieldValidation.valid === false ? 'danger' : 'text-medium'"
+      :class="[$style.description, hideDescription && 'sr-only']"
+    >
+      {{ fieldValidation.valid === false ? errorMessage : description }}
+    </vue-text>
+  </div>
 </template>
 
 <script lang="ts">
-import { ValidationProvider } from 'vee-validate';
-import { defineComponent } from '@vue/composition-api';
+import { computed, defineComponent, inject } from '@vue/composition-api';
 import { useIntersectionObserver } from '@/composables/use-intersection-observer';
 import { getDomRef } from '@/composables/get-dom-ref';
-import VueText from '@/components/typography/VueText/VueText.vue';
 import { shirtSizeValidator } from '@/components/prop-validators';
+import {
+  registerFieldValidation,
+  registerFieldValidationDefault,
+} from '@/components/forms/VueForm/register-field-validation';
+import { IValidationRules } from '@/components/forms/VueForm/IForm';
+import VueText from '@/components/typography/VueText/VueText.vue';
 
 export default defineComponent({
   name: 'VueInput',
-  components: { VueText, ValidationProvider },
+  components: { VueText },
   inheritAttrs: false,
   props: {
     id: { type: String, required: true },
@@ -90,7 +92,7 @@ export default defineComponent({
     hideLabel: { type: Boolean, default: false },
     hideDescription: { type: Boolean, default: false },
     required: { type: Boolean, default: false },
-    validation: { type: [String, Object], default: null },
+    validation: { type: Object as () => IValidationRules, default: null },
     value: { type: [String, Number], default: null },
     disabled: { type: Boolean, default: false },
     placeholder: { type: String, default: null },
@@ -107,6 +109,15 @@ export default defineComponent({
   },
   setup(props) {
     const input = getDomRef(null);
+    const registerValidation = inject(registerFieldValidation, registerFieldValidationDefault);
+    const fieldValidation = registerValidation(
+      props.id,
+      computed(() => props.value),
+      {
+        ...props.validation,
+        required: props.required,
+      },
+    );
 
     useIntersectionObserver(input, (entries: IntersectionObserverEntry[]) => {
       if (props.autofocus) {
@@ -116,6 +127,7 @@ export default defineComponent({
 
     return {
       input,
+      fieldValidation,
     };
   },
 });
@@ -255,11 +267,9 @@ export default defineComponent({
   }
 
   .description {
-    display: flex;
-    height: $input-description-height;
+    display: block;
+    min-height: $input-description-height;
     margin-top: $input-description-gap;
-    white-space: nowrap;
-    width: 0;
   }
 }
 </style>

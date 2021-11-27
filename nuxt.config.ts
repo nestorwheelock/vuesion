@@ -66,7 +66,7 @@ const config: Configuration = {
         },
       },
     },
-    transpile: ['vee-validate', '@vue/apollo-composable'],
+    transpile: ['@vue/apollo-composable'],
   },
   buildModules: [
     '@nuxt/typescript-build',
@@ -153,7 +153,6 @@ const config: Configuration = {
   ],
   plugins: [
     { src: '@/plugins/apollo/provide-apollo-client' },
-    { src: '@/plugins/vee-validate/vee-validate' },
     { src: '@/plugins/vuex-persist/vuex-persist.client' },
     { src: '@/plugins/vuex-persist/vuex-persist.server' },
     { src: '@/plugins/pwa/update.client' },

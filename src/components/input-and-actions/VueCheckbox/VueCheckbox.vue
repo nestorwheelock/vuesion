@@ -1,19 +1,14 @@
 <template>
-  <ValidationProvider
-    ref="validator"
+  <div
     :class="[$style.checkbox, disabled && $style.disabled]"
-    :aria-label="label"
-    :vid="id"
-    :name="name"
-    :rules="validation"
-    tag="div"
     :tabindex="disabled ? null : 0"
-    @click.native.stop.prevent="onClick"
-    @keypress.space.native.stop.prevent="onClick"
+    @click.stop.prevent="onClick"
+    @keypress.space.stop.prevent="onClick"
   >
     <div :class="$style.wrapper">
       <input
         :id="id"
+        :name="name"
         type="checkbox"
         :checked="checked"
         :required="required"
@@ -43,17 +38,20 @@
     <vue-text v-if="description" :class="$style.description" as="div">
       {{ description }}
     </vue-text>
-  </ValidationProvider>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
-import { ValidationProvider } from 'vee-validate';
+import { computed, defineComponent, inject } from '@vue/composition-api';
+import {
+  registerFieldValidation,
+  registerFieldValidationDefault,
+} from '@/components/forms/VueForm/register-field-validation';
 import VueText from '@/components/typography/VueText/VueText.vue';
 
 export default defineComponent({
   name: 'VueCheckbox',
-  components: { VueText, ValidationProvider },
+  components: { VueText },
   inheritAttrs: false,
   model: {
     prop: 'checked',
@@ -71,6 +69,17 @@ export default defineComponent({
     checked: { type: Boolean, default: false },
   },
   setup(props, { emit }) {
+    const registerValidation = inject(registerFieldValidation, registerFieldValidationDefault);
+    const fieldValidation = registerValidation(
+      props.id,
+      computed(() => props.checked),
+      {
+        ...props.validation,
+        required: props.required,
+      },
+      true,
+    );
+
     const onClick = (e: Event) => {
       e.preventDefault();
 
@@ -81,6 +90,7 @@ export default defineComponent({
 
     return {
       onClick,
+      fieldValidation,
     };
   },
 });

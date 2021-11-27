@@ -1,57 +1,58 @@
 <template>
-  <ValidationProvider v-slot="{ errors }" ref="validator" :vid="id" :name="name" :rules="validation" tag="div">
-    <div :class="[$style.vueTextarea, disabled && $style.disabled, errors.length > 0 && $style.error]">
-      <vue-text
-        :for="id"
-        look="label"
-        :color="errors.length > 0 ? 'danger' : 'text-medium'"
-        :class="[$style.label, hideLabel && 'sr-only']"
-        as="label"
-      >
-        {{ label }}
-        <sup v-if="required">*</sup>
-      </vue-text>
+  <div :class="[$style.vueTextarea, disabled && $style.disabled, fieldValidation.valid === false && $style.error]">
+    <vue-text
+      :for="id"
+      look="label"
+      :color="fieldValidation.valid === false ? 'danger' : 'text-medium'"
+      :class="[$style.label, hideLabel && 'sr-only']"
+      as="label"
+    >
+      {{ label }}
+      <sup v-if="required">*</sup>
+    </vue-text>
 
-      <textarea
-        :id="id"
-        ref="input"
-        :name="name"
-        :placeholder="placeholder"
-        :required="required"
-        :value="value"
-        :autocomplete="autocomplete"
-        :disabled="disabled"
-        :readonly="readonly"
-        :autofocus="autofocus"
-        v-bind="$attrs"
-        v-on="{
-          ...$listeners,
-          input: (e) => {
-            $emit('input', e.target.value);
-          },
-        }"
-      />
+    <textarea
+      :id="id"
+      ref="input"
+      :name="name"
+      :placeholder="placeholder"
+      :required="required"
+      :value="value"
+      :autocomplete="autocomplete"
+      :disabled="disabled"
+      :readonly="readonly"
+      :autofocus="autofocus"
+      v-bind="$attrs"
+      v-on="{
+        ...$listeners,
+        input: (e) => {
+          $emit('input', e.target.value);
+        },
+      }"
+    />
 
-      <vue-text
-        :color="errors.length > 0 ? 'danger' : 'text-medium'"
-        :class="[$style.description, hideDescription && 'sr-only']"
-      >
-        {{ errors.length > 0 ? errorMessage : description }}
-      </vue-text>
-    </div>
-  </ValidationProvider>
+    <vue-text
+      :color="fieldValidation.valid === false ? 'danger' : 'text-medium'"
+      :class="[$style.description, hideDescription && 'sr-only']"
+    >
+      {{ fieldValidation.valid === false ? errorMessage : description }}
+    </vue-text>
+  </div>
 </template>
 
 <script lang="ts">
-import { ValidationProvider } from 'vee-validate';
-import { defineComponent } from '@vue/composition-api';
+import { computed, defineComponent, inject } from '@vue/composition-api';
 import { useIntersectionObserver } from '@/composables/use-intersection-observer';
 import { getDomRef } from '@/composables/get-dom-ref';
+import {
+  registerFieldValidation,
+  registerFieldValidationDefault,
+} from '@/components/forms/VueForm/register-field-validation';
 import VueText from '@/components/typography/VueText/VueText.vue';
 
 export default defineComponent({
   name: 'VueTextarea',
-  components: { VueText, ValidationProvider },
+  components: { VueText },
   inheritAttrs: false,
   props: {
     id: { type: String, required: true },
@@ -72,6 +73,15 @@ export default defineComponent({
   },
   setup(props) {
     const input = getDomRef(null);
+    const registerValidation = inject(registerFieldValidation, registerFieldValidationDefault);
+    const fieldValidation = registerValidation(
+      props.id,
+      computed(() => props.value),
+      {
+        ...props.validation,
+        required: props.required,
+      },
+    );
 
     useIntersectionObserver(input, (entries: IntersectionObserverEntry[]) => {
       if (props.autofocus) {
@@ -81,6 +91,7 @@ export default defineComponent({
 
     return {
       input,
+      fieldValidation,
     };
   },
 });
@@ -148,8 +159,8 @@ export default defineComponent({
   }
 
   .description {
-    display: flex;
-    height: $textarea-description-height;
+    display: block;
+    min-height: $textarea-description-height;
     margin-top: $textarea-description-gap;
   }
 }

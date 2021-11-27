@@ -48,7 +48,7 @@ export default {
   name: 'VueNavbar',
   components: { VueDropdown, VueAvatar, VueIconMenu, VueColumns, VueColumn, VueBox },
   props: {
-    userName: { type: String, default: null },
+    userName: { type: [String, Boolean], default: false },
     userImage: { type: String, default: null },
     showMenuIcon: { type: Boolean, default: true },
   },

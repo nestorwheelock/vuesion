@@ -40,7 +40,7 @@
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import { IItem } from '@/interfaces/IItem';
 import { getDomRef } from '@/composables/get-dom-ref';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import VueText from '@/components/typography/VueText/VueText.vue';
 
 export default defineComponent({

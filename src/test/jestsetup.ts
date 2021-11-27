@@ -6,7 +6,6 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import VueCompositionApi from '@vue/composition-api';
 import VueI18n from 'vue-i18n';
-import '@/plugins/vee-validate/vee-validate.ts';
 import { i18n } from '@/test/i18n';
 
 Vue.use(Vuex);

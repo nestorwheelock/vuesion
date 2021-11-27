@@ -69,7 +69,7 @@ Or have a look into the future and visit the **[vuesion-next app on heroku!](htt
   - [story-source](https://storybook.js.org/addons/@storybook/addon-storysource)
   - [viewport](https://storybook.js.org/addons/@storybook/addon-viewport/)
   - [theme-switcher](https://github.com/vuesion/packages/tree/master/packages/storybook-theme-switcher)
-- Form validation with [vee-validate](https://vee-validate.logaretm.com/v3)
+- Form validation
 - [Composition-api module](https://composition-api.nuxtjs.org/)
 - [Anime.js](https://animejs.com/) integration
 
@@ -160,7 +160,6 @@ This project follows the [all-contributors](https://github.com/kentcdodds/all-co
 - [jest](https://jestjs.io/)
 - [cypress.io](https://www.cypress.io/)
 - [testing-library](https://testing-library.com/docs/vue-testing-library/intro/)
-- [vee-validate](https://vee-validate.logaretm.com/v3)
 - [animejs](https://animejs.com/)
 
 # Contact
